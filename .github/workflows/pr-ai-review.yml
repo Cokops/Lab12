@@ -7,16 +7,20 @@ on:
 jobs:
   ai-review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -27,29 +31,49 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      shell: python
       run: |
         import os
+        import sys
         import requests
         import json
         import subprocess
-        
+
         # Get PR details
-        pr_number = ${{ github.event.number }}
-        repo = ${{ github.repository }}
+        pr_number = os.environ['PR_NUMBER']
+        repo = os.environ['REPO']
         
-        # Get diff
-        diff = subprocess.check_output(['git', 'diff', 'HEAD', 'HEAD~']).decode('utf-8')
-        
+        # Get diff from PR
+        try:
+            result = subprocess.run(
+                ['gh', 'pr', 'diff', pr_number, '--repo', repo],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            diff = result.stdout
+        except subprocess.CalledProcessError as e:
+            print(f"Error getting PR diff: {e.stderr}")
+            sys.exit(1)
+
         if not diff.strip():
-            diff = subprocess.check_output(['git', 'diff', 'HEAD']).decode('utf-8')
-        
+            print("No changes found in PR")
+            sys.exit(0)
+
+        # Limit diff size for API
+        if len(diff) > 8000:
+            diff = diff[:8000] + "\n... (diff truncated due to size)"
+
         # Prepare AI prompt
         prompt = f"""Analyze the following code changes and provide:
-        1. A concise summary of the changes
-        2. Potential issues or improvements (security, performance, style)
+        1. A concise summary of the changes (2-3 sentences)
+        2. Potential issues or improvements (security, performance, style, bugs)
         
-        Changes:\n{diff}\n"""
-        
+        Changes:
+        {diff}"""
+
         # Call OpenAI API
         headers = {
             "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",
@@ -57,28 +81,70 @@ jobs:
         }
         
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o-mini",
             "messages": [
-                {"role": "system", "content": "You are a senior Python developer reviewing code changes. Be concise and constructive."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system", 
+                    "content": "You are a senior Python developer reviewing code changes. Be concise, constructive, and specific. Format your response in Markdown."
+                },
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
             ],
-            "temperature": 0.7
+            "temperature": 0.3,
+            "max_tokens": 1000
         }
+
+        print("🤖 Sending request to OpenAI API...")
         
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(data))
-        
-        if response.status_code == 200:
-            ai_response = response.json()['choices'][0]['message']['content']
-            
-            # Post comment on PR
-            comment_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-            comment_data = {"body": f"## AI Code Review\n\n{ai_response}"}
-            
-            requests.post(
-                comment_url,
-                headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Content-Type": "application/json"},
-                data=json.dumps(comment_data)
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30
             )
-        else:
-            print(f"Error: {response.status_code} - {response.text}")
-            exit(1)
+            response.raise_for_status()
+            ai_response = response.json()['choices'][0]['message']['content']
+            print("✅ Received AI response")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ OpenAI API error: {e}")
+            if hasattr(e, 'response') and e.response:
+                print(f"Response: {e.response.text}")
+            sys.exit(1)
+
+        # Post comment on PR
+        comment_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+        comment_body = f"""## 🤖 AI Code Review
+
+        {ai_response}
+
+        ---
+        *Automated review generated by OpenAI GPT-4o-mini*"""
+        
+        comment_data = {"body": comment_body}
+        
+        github_headers = {
+            "Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+
+        print("📝 Posting comment to PR...")
+        
+        try:
+            comment_response = requests.post(
+                comment_url,
+                headers=github_headers,
+                json=comment_data,
+                timeout=15
+            )
+            comment_response.raise_for_status()
+            print("✅ Comment posted successfully!")
+            print(f"Comment URL: {comment_response.json()['html_url']}")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Error posting comment: {e}")
+            if hasattr(e, 'response') and e.response:
+                print(f"Response: {e.response.text}")
+            sys.exit(1)
