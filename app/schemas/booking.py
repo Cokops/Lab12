@@ -19,12 +19,11 @@ class BookingBase(BaseModel):
     status: BookingStatus = BookingStatus.PENDING
     special_requests: Optional[str] = None
 
-    class Config:
-        @staticmethod
-        def validate_dates(booking: 'BookingBase'):
-            if booking.check_out_date <= booking.check_in_date:
-                raise ValueError('Check-out date must be after check-in date')
-            return booking
+    @model_validator(mode='after')
+    def validate_dates(self):
+        if self.check_out_date <= self.check_in_date:
+            raise ValueError('Check-out date must be after check-in date')
+        return self
 
 class BookingCreate(BookingBase):
     pass

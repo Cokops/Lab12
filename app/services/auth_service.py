@@ -6,7 +6,7 @@ from app.core.security import get_password_hash, verify_password
 from fastapi import HTTPException, status
 
 async def register_user(db: AsyncSession, user_in: UserCreate) -> UserInDB:
-    # Проверка на существующего пользователя
+    # Проверка на существующего пользователя по email
     result = await db.execute(select(User).where(User.email == user_in.email))
     existing_user = result.scalar_one_or_none()
     if existing_user:
