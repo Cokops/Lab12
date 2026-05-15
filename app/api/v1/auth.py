@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas import UserCreate, User, Token
@@ -7,7 +8,7 @@ from app.core.security import create_access_token
 from datetime import timedelta
 from app.core.config import get_settings
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])  # ← ЭТА СТРОКА ОБЯЗАТЕЛЬНА!
 settings = get_settings()
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
@@ -20,12 +21,11 @@ async def register(
 
 @router.post("/login", response_model=Token)
 async def login(
-    email: str,
-    password: str,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
     """Аутентификация пользователя и выдача JWT токена"""
-    user = await authenticate_user(db, email, password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

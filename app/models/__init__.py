@@ -5,6 +5,7 @@ from .booking import Booking
 from .review import Review
 from .payment import Payment
 
-# Экспортируем Base, если он нужен, но обычно его импортируют из database
-# Base экспортируется отдельно, если это необходимо для моделей
-__all__ = ["User", "Hotel", "Room", "Booking", "Review", "Payment"]
+from ..database import Base  # Импортируем Base из database для моделей
+
+# Теперь Base доступен для импорта из app.models
+__all__ = ["User", "Hotel", "Room", "Booking", "Review", "Payment", "Base"]

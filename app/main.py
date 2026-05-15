@@ -8,7 +8,7 @@ from app.models import user, hotel, room, booking, payment, review  # Импор
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
 # Создание таблиц при запуске приложения (в реальном проекте используйте Alembic)
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)  # Удалено: синхронный вызов на async engine невозможен
 
 # Подключаем маршруты
 app.include_router(api_router, prefix=settings.API_V1_STR)

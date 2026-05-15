@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
-from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 from app.core.config import Settings
 
 # Тестовые настройки с in-memory SQLite
@@ -56,8 +56,9 @@ async def db_session(test_db):
             finally:
                 await session.rollback()
 
-@pytest.fixture(scope="module")
-def client():
-    """Фикстура клиента для тестирования API."""
-    with TestClient(app) as c:
+@pytest_asyncio.fixture(scope="function")
+async def client():
+    """Фикстура AsyncClient для тестирования API."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c

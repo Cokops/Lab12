@@ -18,8 +18,9 @@ async def test_register_user(db_session: AsyncSession, client: AsyncClient):
     assert "id" in data
 
     # Проверка, что пользователь сохранен в БД
+    from sqlalchemy import select
     result = await db_session.execute(
-        db_session.query(User).filter(User.email == user_data["email"])
+        select(User).where(User.email == user_data["email"])
     )
     db_user = result.scalar_one_or_none()
     assert db_user is not None

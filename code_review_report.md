@@ -70,3 +70,30 @@ DATABASE_URL: str = "sqlite+aiosqlite:///./test_hotel_booking.db"
 
 **Как исправил:**
 Удалил строку с `return None`, оставив только `raise HTTPException`, так как это соответствует стилю FastAPI и обеспечивает единообразие с другими частями API.
+
+## 6. Синхронный вызов на асинхронном движке
+
+**Что сгенерировал ИИ:**
+```python
+Base.metadata.create_all(bind=engine)
+```
+
+**В чём проблема:**
+Метод `create_all` является синхронным и вызывается на `AsyncEngine`, что вызовет `AttributeError` при запуске приложения. Это критическая ошибка, делающая приложение незапускаемым.
+
+**Как исправил:**
+Удалил строку `Base.metadata.create_all(bind=engine)` из `main.py`. Создание таблиц должно выполняться асинхронно (через `run_sync`) или с использованием Alembic.
+
+
+## 7. Отсутствующий импорт `model_validator`
+
+**Что сгенерировал ИИ:**
+```python
+@model_validator(mode='after')
+```
+
+**В чём проблема:**
+`model_validator` не импортирован из `pydantic`. Это вызовет `NameError` при импорте модуля `booking.py`.
+
+**Как исправил:**
+Добавил `model_validator` в импорт из `pydantic` в файле `schemas/booking.py`.
