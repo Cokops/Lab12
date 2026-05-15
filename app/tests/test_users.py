@@ -1,6 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.schemas import UserCreate, UserUpdate
 from app.models import User
 
@@ -22,7 +23,7 @@ async def test_create_user(db_session: AsyncSession, client: AsyncClient):
 
     # Проверка, что пользователь сохранен в БД
     result = await db_session.execute(
-        db_session.query(User).filter(User.email == user_data["email"])
+        select(User).where(User.email == user_data["email"])
     )
     db_user = result.scalar_one_or_none()
     assert db_user is not None
@@ -47,7 +48,7 @@ async def test_get_user(db_session: AsyncSession, client: AsyncClient):
     assert data["full_name"] == user_data["full_name"]
 
 @pytest.mark.asyncio
-async def test_update_user(db_session: AsyncSession, client: AsyncClient):
+async def test_update_user_(db_session: AsyncSession, client: AsyncClient):
     # Сначала создаем пользователя
     user_data = {
         "email": "updateuser@example.com",
@@ -70,7 +71,7 @@ async def test_update_user(db_session: AsyncSession, client: AsyncClient):
     assert data["phone"] == update_data["phone"]
 
 @pytest.mark.asyncio
-async def test_delete_user(db_session: AsyncSession, client: AsyncClient):
+async def test_delete_user_(db_session: AsyncSession, client: AsyncClient):
     # Сначала создаем пользователя
     user_data = {
         "email": "deleteuser@example.com",
@@ -89,7 +90,7 @@ async def test_delete_user(db_session: AsyncSession, client: AsyncClient):
     assert response.status_code == 404
 
 @pytest.mark.asyncio
-async def test_get_users_list(db_session: AsyncSession, client: AsyncClient):
+async def test_get_users_list_(db_session: AsyncSession, client: AsyncClient):
     # Создаем несколько пользователей
     users_data = [
         {"email": "user1@example.com", "password": "password123", "full_name": "User One"},

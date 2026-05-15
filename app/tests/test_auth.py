@@ -11,7 +11,7 @@ async def test_register_user(db_session: AsyncSession, client: AsyncClient):
         "password": "password123",
         "full_name": "Test User"
     }
-    response = await client.post("/api/v1/auth/register", json=user_data)
+    response = await client.post("/auth/register", json=user_data)
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == user_data["email"]
@@ -33,10 +33,10 @@ async def test_register_existing_email(db_session: AsyncSession, client: AsyncCl
         "full_name": "Existing User"
     }
     # Сначала зарегистрируем пользователя
-    await client.post("/api/v1/auth/register", json=user_data)
+    await client.post("/auth/register", json=user_data)
 
     # Попытка зарегистрировать с тем же email
-    response = await client.post("/api/v1/auth/register", json=user_data)
+    response = await client.post("/auth/register", json=user_data)
     assert response.status_code == 400
     assert "Email already registered" in response.json()["detail"]
 
@@ -48,12 +48,12 @@ async def test_login_user(client: AsyncClient):
         "password": "password123",
         "full_name": "Login User"
     }
-    await client.post("/api/v1/auth/register", json=user_data)
+    await client.post("/auth/register", json=user_data)
 
     # Попытка входа с правильными данными
     response = await client.post(
-        "/api/v1/auth/login",
-        data={"email": user_data["email"], "password": user_data["password"]}
+        "/auth/login",
+        data={"username": user_data["email"], "password": user_data["password"]}
     )
     assert response.status_code == 200
     data = response.json()
@@ -67,12 +67,12 @@ async def test_login_incorrect_password(client: AsyncClient):
         "password": "password123",
         "full_name": "Wrong Pass User"
     }
-    await client.post("/api/v1/auth/register", json=user_data)
+    await client.post("/auth/register", json=user_data)
 
     # Попытка входа с неправильным паролем
     response = await client.post(
         "/api/v1/auth/login",
-        data={"email": user_data["email"], "password": "wrongpassword"}
+        data={"username": user_data["email"], "password": "wrongpassword"}
     )
     assert response.status_code == 401
     assert "Incorrect email or password" in response.json()["detail"]

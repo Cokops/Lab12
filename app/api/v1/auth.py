@@ -8,7 +8,7 @@ from app.core.security import create_access_token
 from datetime import timedelta
 from app.core.config import get_settings
 
-router = APIRouter(prefix="/auth", tags=["auth"])  # ← ЭТА СТРОКА ОБЯЗАТЕЛЬНА!
+router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)

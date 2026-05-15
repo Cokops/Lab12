@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.schemas import User, UserCreate, UserUpdate
+from app.schemas.user import User, UserCreate, UserUpdate
 from app.services import get_user, get_users, create_user, update_user, delete_user
 from app.core.security import get_current_active_user, get_current_admin
 from app.models import User as UserModel

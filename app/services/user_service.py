@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.models import User
-from app.schemas import UserCreate, UserUpdate, User
+from app.models.user import User 
+from app.schemas.user import UserCreate, UserUpdate
+from app.models.user import User
 from fastapi import HTTPException, status
 from app.core.security import get_password_hash
 

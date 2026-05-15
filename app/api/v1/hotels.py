@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.schemas import Hotel, HotelCreate, HotelUpdate
+from app.schemas.hotel import Hotel, HotelCreate, HotelUpdate
 from app.services.hotel_service import get_hotel, get_hotels, create_hotel, update_hotel, delete_hotel
 
 router = APIRouter(prefix="/hotels", tags=["hotels"])

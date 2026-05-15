@@ -1,6 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.schemas import ReviewCreate, ReviewUpdate
 from app.models import Review, User, Hotel
 
@@ -41,9 +42,8 @@ async def test_create_review(db_session: AsyncSession, client: AsyncClient):
     assert data["comment"] == "Great hotel!"
     assert "id" in data
 
-    # Проверка, что отзыв сохранен в БД
     result = await db_session.execute(
-        db_session.query(Review).filter(Review.id == data["id"])
+        select(Review).where(Review.id == data["id"])
     )
     db_review = result.scalar_one_or_none()
     assert db_review is not None

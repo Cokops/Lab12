@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Hotel, User
+from app.models.hotel import Hotel as HotelModel
+from app.models.user import User
 from app.schemas import HotelCreate, HotelUpdate, UserCreate, UserUpdate
 from app.services import hotel_service, user_service
 from fastapi import HTTPException
@@ -19,7 +20,7 @@ class TestHotelService:
         Проверяет успешное получение отеля.
         """
         # Мокируем объект отеля
-        mock_hotel = AsyncMock(spec=Hotel)
+        mock_hotel = AsyncMock(spec=HotelModel)
         mock_hotel.id = 1
         mock_hotel.name = "Test Hotel"
         # Мокируем результат запроса
@@ -66,7 +67,7 @@ class TestHotelService:
         # Создаем входные данные
         hotel_in = HotelCreate(name="New Hotel", address="New St", city="New City", country="New Country")
         # Мокируем новый объект отеля
-        mock_db_hotel = MagicMock(spec=Hotel, **{
+        mock_db_hotel = MagicMock(spec=HotelModel, **{
             "id": 1,
             "name": hotel_in.name,
             "rating": 0.0
@@ -77,7 +78,7 @@ class TestHotelService:
         mock_db.refresh = AsyncMock(side_effect=lambda obj: setattr(obj, 'id', 1))
         
         # Мокируем Hotel так, чтобы он возвращал mock_db_hotel при создании
-        with patch('app.services.hotel_service.Hotel', return_value=mock_db_hotel):
+        with patch('app.models.hotel.Hotel', return_value=mock_db_hotel): # Мокируем модель из app.models
             # Вызываем функцию
             result = await hotel_service.create_hotel(mock_db, hotel_in)
         
@@ -95,7 +96,7 @@ class TestHotelService:
         Проверяет успешное обновление отеля, включая обновление частичных данных (exclude_unset).
         """
         # Мокируем существующий отель в БД
-        mock_db_hotel = MagicMock(spec=Hotel)
+        mock_db_hotel = MagicMock(spec=HotelModel)
         mock_db_hotel.id = 1
         mock_db_hotel.name = "Old Name"
         mock_db_hotel.address = "Old Address"
@@ -154,7 +155,7 @@ class TestHotelService:
         Проверяет успешное удаление отеля.
         """
         # Мокируем существующий отель
-        mock_db_hotel = MagicMock(spec=Hotel)
+        mock_db_hotel = MagicMock(spec=HotelModel)
         # Мокируем результат запроса
         mock_result = AsyncMock()
         mock_result.scalar_one_or_none.return_value = mock_db_hotel
@@ -246,7 +247,7 @@ class TestUserService:
         # Мокируем хеширование пароля
         with patch('app.services.user_service.get_password_hash', return_value="hashed_new_password") as mock_hash:
             # Создаем данные для обновления с паролем
-            update_in = UserUpdate(password="new_password", full_name="Updated Name")
+            update_in = UserUpdate(email="user@example.com", password="new_password", full_name="Updated Name")
             
             # Вызываем функцию
             result = await user_service.update_user(mock_db, 1, update_in)

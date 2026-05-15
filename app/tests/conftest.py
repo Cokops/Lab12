@@ -62,3 +62,28 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+@pytest_asyncio.fixture
+async def test_user(db_session):
+    from app.models.user import User
+    from app.core.security import get_password_hash
+    
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("password123"),
+        full_name="Test User",
+        role="user"
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+@pytest_asyncio.fixture
+async def auth_headers(client, test_user):
+    response = await client.post("/api/v1/auth/login", data={
+        "username": "test@example.com",
+        "password": "password123"
+    })
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
