@@ -178,6 +178,7 @@
   - `pr-ai-review.yml` — Автоматическое AI-код-ревью через Gemini API при Pull Request
 
 - **Корневые файлы**
+  - `coverage_report` — Отчёт о покрытии
   - `README.md` — Данная документация
   - `requirements.txt` — Зависимости Python
   - `pytest.ini` — Конфигурация pytest (asyncio_mode = auto)

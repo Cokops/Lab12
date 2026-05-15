@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
 
 class RoomBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     hotel_id: int
     room_number: str = Field(..., min_length=1)
     room_type: str = Field(..., min_length=1)
@@ -15,8 +17,11 @@ class RoomCreate(RoomBase):
     pass
 
 class RoomUpdate(BaseModel):
-    room_number: Optional[str] = None
-    room_type: Optional[str] = None
+    """Схема для частичного обновления комнаты"""
+    model_config = ConfigDict(from_attributes=True)
+    
+    room_number: Optional[str] = Field(None, min_length=1)
+    room_type: Optional[str] = Field(None, min_length=1)
     price_per_night: Optional[float] = Field(None, gt=0)
     description: Optional[str] = None
     max_occupancy: Optional[int] = Field(None, gt=0)
@@ -26,9 +31,6 @@ class RoomInDBBase(RoomBase):
     id: int
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class Room(RoomInDBBase):
     pass

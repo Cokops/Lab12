@@ -1,8 +1,13 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=".env"
+    )
+    
     PROJECT_NAME: str = "Hotel Booking API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -14,10 +19,6 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-here-use-env-var-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
 
 
 # Создаём экземпляр настроек (ОБЯЗАТЕЛЬНО для импорта!)

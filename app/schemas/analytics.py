@@ -1,8 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 class AnalyticsReport(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     total_hotels: int
     total_rooms: int
     total_bookings: int
@@ -15,6 +17,3 @@ class AnalyticsReport(BaseModel):
     top_hotels_by_bookings: List[Dict[str, Any]]
     booking_status_distribution: Dict[str, int]
     generated_at: str
-
-    class Config:
-        from_attributes = True
